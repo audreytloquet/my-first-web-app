@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Pulse - Habit & Mood Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom smooth scrollbar and transitions */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-full flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <header class="w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                    <i class="fa-solid fa-heart-pulse text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">Daily Pulse</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400" id="current-date-display">Today</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button onclick="app.switchTab('tracker')" id="nav-tracker" class="px-4 py-2 text-sm font-medium rounded-xl transition-all bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+                    <i class="fa-regular fa-calendar-check mr-1.5"></i> Tracker
+                </button>
+                <button onclick="app.switchTab('analytics')" id="nav-analytics" class="px-4 py-2 text-sm font-medium rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i class="fa-solid fa-chart-pie mr-1.5"></i> Analytics
+                </button>
+                <button onclick="app.toggleDarkMode()" class="p-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" title="Toggle Theme">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl w-full mx-auto px-4 py-8 flex-grow">
+        
+        <!-- TRACKER VIEW -->
+        <div id="view-tracker" class="space-y-8 fade-in">
+            
+            <!-- Mood Check-in Section -->
+            <section class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="font-semibold text-lg">How are you feeling today?</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Select your prevailing mood for the day.</p>
+                    </div>
+                    <span id="selected-mood-label" class="text-xs font-semibold px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-indigo-600 dark:text-indigo-400">No mood logged</span>
+                </div>
+                <div class="grid grid-cols-5 gap-3 md:gap-4" id="mood-selector">
+                    <!-- Mood buttons injected via JS -->
+                </div>
+                <div class="mt-4">
+                    <textarea id="daily-note" placeholder="Add a quick journal note or reflection..." rows="2" oninput="app.saveNote(this.value)" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none transition-all"></textarea>
+                </div>
+            </section>
+
+            <!-- Habits Section -->
+            <section class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-semibold text-lg">Daily Habits</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Track your daily rituals and routines.</p>
+                    </div>
+                    <button onclick="app.openAddModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-medium rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>New Habit</span>
+                    </button>
+                </div>
+
+                <!-- Habit List -->
+                <div id="habit-list" class="space-y-3">
+                    <!-- Habits rendered via JS -->
+                </div>
+            </section>
+        </div>
+
+        <!-- ANALYTICS VIEW -->
+        <div id="view-analytics" class="space-y-8 hidden fade-in">
+            <section class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm">
+                <h2 class="font-semibold text-lg mb-1">Weekly Overview</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">Your habit completion and mood trends over the last 7 days.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-100 dark:border-slate-800/60">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">Habit Completion Rate</p>
+                        <h3 class="text-3xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400" id="stat-completion">0%</h3>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-100 dark:border-slate-800/60">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">Current Streak</p>
+                        <h3 class="text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400" id="stat-streak">0 days</h3>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-100 dark:border-slate-800/60">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">Logged Days</p>
+                        <h3 class="text-3xl font-bold tracking-tight text-violet-600 dark:text-violet-400" id="stat-logged">0 / 7</h3>
+                    </div>
+                </div>
+
+                <h3 class="font-medium text-sm mb-4">Recent Mood Log</h3>
+                <div id="mood-history-list" class="space-y-2">
+                    <!-- Mood history items -->
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Add Habit Modal -->
+    <div id="habit-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-lg">Create New Habit</h3>
+                <button onclick="app.closeAddModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form onsubmit="app.handleCreateHabit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Habit Name</label>
+                    <input type="text" id="new-habit-name" required placeholder="e.g., Morning Meditation, Drink Water..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Category / Icon</label>
+                    <div class="grid grid-cols-4 gap-2" id="icon-selector">
+                        <!-- Icons populated via JS -->
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end space-x-3">
+                    <button type="button" onclick="app.closeAddModal()" class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl shadow-lg shadow-indigo-600/20 transition-all">Save Habit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-5 py-3 rounded-2xl shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center space-x-3 text-sm font-medium">
+        <i class="fa-solid fa-circle-check text-emerald-400" id="toast-icon"></i>
+        <span id="toast-message">Action completed</span>
+    </div>
+
+    <footer class="w-full py-6 text-center text-xs text-slate-400 border-t border-slate-200 dark:border-slate-800">
+        <p>Daily Pulse &bull; Keep moving forward, one day at a time.</p>
+    </footer>
+
+    <script>
+        class DailyPulseApp {
+            constructor() {
+                this.state = {
+                    currentTab: 'tracker',
+                    darkMode: false,
+                    selectedIcon: 'fa-book-open',
+                    habits: [
+                        { id: 'h1', name: 'Morning Hydration', icon: 'fa-glass-water', streak: 4 },
+                        { id: 'h2', name: 'Read for 20 Minutes', icon: 'fa-book-open', streak: 2 },
+                        { id: 'h3', name: '30 Min Workout', icon: 'fa-person-running', streak: 5 },
+                        { id: 'h4', name: 'Mindfulness / Meditate', icon: 'fa-spa', streak: 1 }
+                    ],
+                    logs: {}, // Format: { 'YYYY-MM-DD': { habits: { 'h1': true }, mood: 'happy', note: '...' } }
+                    history: []
+                };
+
+                this.moods = [
+                    { id: 'rad', emoji: '🤩', label: 'Rad', color: 'from-amber-400 to-orange-500' },
+                    { id: 'good', emoji: '😊', label: 'Good', color: 'from-emerald-400 to-teal-500' },
+                    { id: 'okay', emoji: '😐', label: 'Okay', color: 'from-sky-400 to-blue-500' },
+                    { id: 'sad', emoji: '🌧️', label: 'Down', color: 'from-indigo-400 to-violet-500' },
+                    { id: 'tough', emoji: '⚡', label: 'Tough', color: 'from-rose-400 to-pink-500' }
+                ];
+
+                this.icons = [
+                    'fa-book-open', 'fa-glass-water', 'fa-person-running', 'fa-spa',
+                    'fa-dumbbell', 'fa-code', 'fa-pencil', 'fa-apple-whole',
+                    'fa-bed', 'fa-music', 'fa-seedling', 'fa-sun'
+                ];
+
+                this.todayKey = this.formatDateKey(new Date());
+                this.init();
+            }
+
+            formatDateKey(date) {
+                return date.toISOString().split('T')[0];
+            }
+
+            init() {
+                this.loadFromStorage();
+                
+                // Check system preference or saved dark mode
+                if (this.state.darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else if (window.matchMedia('(prefers-color-scheme: dark)').matches && localStorage.getItem('darkMode') === null) {
+                    this.state.darkMode = true;
+                    document.documentElement.classList.add('dark');
+                }
+
+                // Render Date header
+                const options = { weekday: 'long', month: 'short', day: 'numeric' };
+                document.getElementById('current-date-display').textContent = new Date().toLocaleDateString('en-US', options);
+
+                // Ensure today's log entry exists
+                if (!this.state.logs[this.todayKey]) {
+                    this.state.logs[this.todayKey] = { habits: {}, mood: null, note: '' };
+                }
+
+                this.renderMoodSelector();
+                this.renderIconSelector();
+                this.renderHabits();
+                this.renderAnalytics();
+
+                // Set note value if present
+                document.getElementById('daily-note').value = this.state.logs[this.todayKey].note || '';
+                this.updateMoodUI(this.state.logs[this.todayKey].mood);
+            }
+
+            loadFromStorage() {
+                const savedState = localStorage.getItem('daily_pulse_state');
+                if (savedState) {
+                    try {
+                        const parsed = JSON.parse(savedState);
+                        this.state = { ...this.state, ...parsed };
+                    } catch (e) {
+                        console.error('Failed to parse storage', e);
+                    }
+                }
+            }
+
+            saveToStorage() {
+                localStorage.setItem('daily_pulse_state', JSON.stringify(this.state));
+                localStorage.setItem('darkMode', this.state.darkMode);
+            }
+
+            toggleDarkMode() {
+                this.state.darkMode = !this.state.darkMode;
+                if (this.state.darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                this.saveToStorage();
+            }
+
+            switchTab(tab) {
+                this.state.currentTab = tab;
+                const trackerEl = document.getElementById('view-tracker');
+                const analyticsEl = document.getElementById('view-analytics');
+                const navTracker = document.getElementById('nav-tracker');
+                const navAnalytics = document.getElementById('nav-analytics');
+
+                if (tab === 'tracker') {
+                    trackerEl.classList.remove('hidden');
+                    analyticsEl.classList.add('hidden');
+                    navTracker.className = "px-4 py-2 text-sm font-medium rounded-xl transition-all bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400";
+                    navAnalytics.className = "px-4 py-2 text-sm font-medium rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
+                } else {
+                    trackerEl.classList.add('hidden');
+                    analyticsEl.classList.remove('hidden');
+                    navAnalytics.className = "px-4 py-2 text-sm font-medium rounded-xl transition-all bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400";
+                    navTracker.className = "px-4 py-2 text-sm font-medium rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
+                    this.renderAnalytics();
+                }
+            }
+
+            renderMoodSelector() {
+                const container = document.getElementById('mood-selector');
+                container.innerHTML = this.moods.map(m => `
+                    <button onclick="app.selectMood('${m.id}')" id="mood-btn-${m.id}" class="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 bg-slate-50 dark:bg-slate-950 transition-all group">
+                        <span class="text-2xl mb-1 transform group-hover:scale-110 transition-transform">${m.emoji}</span>
+                        <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">${m.label}</span>
+                    </button>
+                `).join('');
+            }
+
+            selectMood(moodId) {
+                this.state.logs[this.todayKey].mood = moodId;
+                this.updateMoodUI(moodId);
+                this.saveToStorage();
+                this.showToast('Mood logged successfully!');
+            }
+
+            updateMoodUI(moodId) {
+                this.moods.forEach(m => {
+                    const btn = document.getElementById(`mood-btn-${m.id}`);
+                    if (!btn) return;
+                    if (m.id === moodId) {
+                        btn.className = "flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 transition-all shadow-sm";
+                        document.getElementById('selected-mood-label').textContent = `Mood: ${m.label} ${m.emoji}`;
+                    } else {
+                        btn.className = "flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 bg-slate-50 dark:bg-slate-950 transition-all group";
+                    }
+                });
+            }
+
+            renderIconSelector() {
+                const container = document.getElementById('icon-selector');
+                container.innerHTML = this.icons.map(icon => `
+                    <button type="button" onclick="app.selectIcon('${icon}')" id="icon-opt-${icon}" class="p-3 rounded-2xl border ${this.state.selectedIcon === icon ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'} flex items-center justify-center hover:border-indigo-500 transition-all">
+                        <i class="fa-solid ${icon}"></i>
+                    </button>
+                `).join('');
+            }
+
+            selectIcon(icon) {
+                this.state.selectedIcon = icon;
+                this.renderIconSelector();
+            }
+
+            renderHabits() {
+                const container = document.getElementById('habit-list');
+                const todayHabits = this.state.logs[this.todayKey].habits || {};
+
+                if (this.state.habits.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+                            <i class="fa-solid fa-clipboard-list text-3xl text-slate-300 dark:text-slate-700 mb-2"></i>
+                            <p class="text-sm font-medium text-slate-500">No habits added yet.</p>
+                            <p class="text-xs text-slate-400 mt-1">Create your first daily habit to get started.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.state.habits.map(habit => {
+                    const isCompleted = !!todayHabits[habit.id];
+                    return `
+                        <div class="bg-white dark:bg-slate-900 border ${isCompleted ? 'border-indigo-500/40 bg-indigo-50/20 dark:bg-indigo-950/10' : 'border-slate-200/80 dark:border-slate-800/80'} rounded-2xl p-4 flex items-center justify-between transition-all shadow-sm">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0">
+                                    <i class="fa-solid ${habit.icon}"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-sm ${isCompleted ? 'line-through text-slate-400 dark:text-slate-500' : ''}">${habit.name}</h4>
+                                    <div class="flex items-center space-x-2 mt-0.5">
+                                        <span class="text-[11px] text-amber-500 dark:text-amber-400 font-medium"><i class="fa-solid fa-fire mr-1"></i>${habit.streak} day streak</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="app.toggleHabit('${habit.id}')" class="w-10 h-10 rounded-xl border ${isCompleted ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700 hover:border-indigo-500'} flex items-center justify-center transition-all shadow-sm">
+                                    <i class="fa-solid fa-check ${isCompleted ? 'opacity-100 scale-100' : 'opacity-0 scale-50'} transition-all"></i>
+                                </button>
+                                <button onclick="app.deleteHabit('${habit.id}')" class="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all flex items-center justify-center text-xs" title="Delete Habit">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            toggleHabit(habitId) {
+                const todayLog = this.state.logs[this.todayKey];
+                const currentStatus = !!todayLog.habits[habitId];
+                todayLog.habits[habitId] = !currentStatus;
+
+                // Update streak logic roughly
+                const habit = this.state.habits.find(h => h.id === habitId);
+                if (habit) {
+                    if (!currentStatus) {
+                        habit.streak += 1;
+                        this.showToast('Habit completed! Keep it up!');
+                    } else {
+                        habit.streak = Math.max(0, habit.streak - 1);
+                    }
+                }
+
+                this.saveToStorage();
+                this.renderHabits();
+            }
+
+            saveNote(text) {
+                this.state.logs[this.todayKey].note = text;
+                this.saveToStorage();
+            }
+
+            openAddModal() {
+                document.getElementById('habit-modal').classList.remove('hidden');
+                document.getElementById('new-habit-name').value = '';
+            }
+
+            closeAddModal() {
+                document.getElementById('habit-modal').classList.add('hidden');
+            }
+
+            handleCreateHabit(e) {
+                e.preventDefault();
+                const name = document.getElementById('new-habit-name').value.trim();
+                if (!name) return;
+
+                const newHabit = {
+                    id: 'h_' + Date.now(),
+                    name: name,
+                    icon: this.state.selectedIcon,
+                    streak: 0
+                };
+
+                this.state.habits.push(newHabit);
+                this.saveToStorage();
+                this.closeAddModal();
+                this.renderHabits();
+                this.showToast('New habit created successfully!');
+            }
+
+            deleteHabit(id) {
+                this.state.habits = this.state.habits.filter(h => h.id !== id);
+                this.saveToStorage();
+                this.renderHabits();
+                this.showToast('Habit deleted');
+            }
+
+            renderAnalytics() {
+                // Calculate completion stats for the last 7 days
+                let totalPossible = this.state.habits.length * 7;
+                let totalCompleted = 0;
+                let loggedDaysCount = 0;
+
+                const historyContainer = document.getElementById('mood-history-list');
+                historyContainer.innerHTML = '';
+
+                let maxStreak = this.state.habits.reduce((acc, h) => Math.max(acc, h.streak), 0);
+
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    const key = this.formatDateKey(d);
+                    const log = this.state.logs[key];
+
+                    if (log) {
+                        if (log.mood) loggedDaysCount++;
+                        if (log.habits) {
+                            Object.values(log.habits).forEach(val => {
+                                if (val) totalCompleted++;
+                            });
+                        }
+
+                        const moodObj = this.moods.find(m => m.id === log.mood);
+                        const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                        
+                        historyContainer.innerHTML += `
+                            <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/60 text-sm">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xl">${moodObj ? moodObj.emoji : '⚪'}</span>
+                                    <div>
+                                        <p class="font-medium text-xs">${dateStr}</p>
+                                        <p class="text-[11px] text-slate-400 truncate max-w-[200px]">${log.note || 'No notes logged'}</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-medium px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-lg">${moodObj ? moodObj.label : 'No mood'}</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                const completionRate = totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : 0;
+                document.getElementById('stat-completion').textContent = `${Math.min(100, completionRate)}%`;
+                document.getElementById('stat-streak').textContent = `${maxStreak} days`;
+                document.getElementById('stat-logged').textContent = `${loggedDaysCount} / 7`;
+            }
+
+            showToast(message) {
+                const toast = document.getElementById('toast');
+                document.getElementById('toast-message').textContent = message;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 2500);
+            }
+        }
+
+        const app = new DailyPulseApp();
+    </script>
+</body>
+</html>
